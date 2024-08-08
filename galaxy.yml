@@ -50,8 +50,9 @@ tags:
 # L(specifiers,https://python-semanticversion.readthedocs.io/en/latest/#requirement-specification). Multiple version
 # range specifiers can be set and are separated by ','
 dependencies:
-  artis3n.tailscale: '>=4.4.0'
   community.general: '>=8.6.3'
+  roles:
+    artis3n.tailscale: '>=4.4.0'
 
 # The URL of the originating SCM repository
 repository: https://github.com/joshrnoll/ansible-collection-homelab

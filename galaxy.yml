@@ -51,8 +51,6 @@ tags:
 # range specifiers can be set and are separated by ','
 dependencies:
   community.general: '>=8.6.3'
-  roles:
-    artis3n.tailscale: '>=4.4.0'
 
 # The URL of the originating SCM repository
 repository: https://github.com/joshrnoll/ansible-collection-homelab

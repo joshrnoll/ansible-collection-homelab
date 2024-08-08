@@ -109,7 +109,7 @@ This example installs plex as a public (exposed to the internet) container. It h
 License
 -------
 
-BSD
+MIT
 
 Author Information
 ------------------

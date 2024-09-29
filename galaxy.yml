@@ -40,4 +40,6 @@ issues: https://github.com/joshrnoll/ansible-collection-homelab/issues
 
 build_ignore:
   - tests
+  - /roles/*/tests
+  - '*.tar.gz'
 ...

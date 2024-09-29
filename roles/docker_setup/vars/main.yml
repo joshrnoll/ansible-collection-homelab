@@ -1,0 +1,19 @@
+---
+docker_setup_docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+docker_setup_ubuntu_dependencies:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - software-properties-common
+  - gnupg
+
+docker_setup_related_ubuntu_packages:
+  - python3-pip
+  - mc
+...

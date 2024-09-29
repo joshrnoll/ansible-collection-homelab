@@ -1,0 +1,13 @@
+---
+proxmox_template_vm_supported_distros:
+  - fedora
+  - ubuntu
+
+proxmox_template_vm_fedora_image: Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2
+proxmox_template_vm_fedora_image_url: https://download.fedoraproject.org/pub/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2
+proxmox_template_vm_ubuntu_image: jammy-server-cloudimg-amd64.img
+proxmox_template_vm_ubuntu_image_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+
+proxmox_template_vm_ubuntu_ostype: l26
+proxmox_template_vm_fedora_ostype: l26
+...

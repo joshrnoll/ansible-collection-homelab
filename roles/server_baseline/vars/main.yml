@@ -1,0 +1,31 @@
+---
+server_baseline_ubuntu_packages_default:
+  - curl
+  - nano
+  - vim
+  - git
+  - ufw
+  - cifs-utils
+
+server_baseline_fedora_packages_default:
+  - curl
+  - nano
+  - vim
+  - git
+  - dnf-plugins-core
+  - firewalld
+  - cifs-utils
+
+server_baseline_proxmox_packages_default:
+  - curl
+  - nano
+  - vim
+  - git
+  - python3-proxmoxer
+  - python3-requests
+
+supported_distributions:
+  - Debian
+  - Ubuntu
+  - Fedora
+...

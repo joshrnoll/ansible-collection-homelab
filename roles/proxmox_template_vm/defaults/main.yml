@@ -1,0 +1,15 @@
+---
+proxmox_template_vm_ubuntu_name: ubuntu-template
+proxmox_template_vm_ubuntu_memory: 8192
+proxmox_template_vm_ubuntu_cores: 2
+proxmox_template_vm_ubuntu_storage: local-lvm
+
+proxmox_template_vm_fedora_name: fedora-template
+proxmox_template_vm_fedora_memory: 8192
+proxmox_template_vm_fedora_cores: 2
+proxmox_template_vm_fedora_storage: local-lvm
+
+# Used to avoid file locks with slow storage.
+# See https://forum.proxmox.com/threads/error-with-cfs-lock-unable-to-create-image-got-lock-timeout-aborting-command.65786/
+proxmox_template_vm_slow_storage: false
+...

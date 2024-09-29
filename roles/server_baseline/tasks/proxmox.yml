@@ -1,0 +1,37 @@
+---
+- name: Update apt and install default system packages
+  apt:
+    pkg: "{{ server_baseline_proxmox_packages_default }}"
+    state: latest
+    update_cache: true
+
+- name: Update apt and install additional system packages
+  apt:
+    pkg: "{{ server_baseline_proxmox_packages }}"
+    state: latest
+  when: proxmox_baseline_packages is defined
+
+- name: Set authorized key for root user
+  ansible.posix.authorized_key:
+    user: root
+    state: present
+    key: "{{ server_baseline_ssh_key }}"
+    
+- name: Disable SSH password auth
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^#PasswordAuthentication yes"
+    line: "PasswordAuthentication no"
+  notify:
+    - Restart SSH
+
+- name: Install and bring up Tailscale
+  ansible.builtin.include_role:
+    name: artis3n.tailscale
+  vars:
+    tailscale_authkey: "{{ server_baseline_tailscale_oauth_client_secret }}"
+    tailscale_tags:
+      - "servers"
+    tailscale_oauth_ephemeral: false
+    tailscale_oauth_preauthorized: true
+    no_log: false

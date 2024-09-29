@@ -1,9 +1,9 @@
 ---
 galaxy_info:
   author: Josh Noll
-  
-  description: Installs a docker container with a Tailscale sidecar for networking.
-  
+
+  description: Deploys VM templates to Proxmox nodes/cluster
+
   license: MIT
 
   min_ansible_version: 2.16.9
@@ -13,10 +13,10 @@ galaxy_info:
     - tailscale
     - ubuntu
     - fedora
-    - docker
-    - containers
     - infrastructure
     - linux
+    - baseline
+    - proxmox
 
 dependencies: []
 ...

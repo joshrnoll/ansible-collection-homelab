@@ -1,0 +1,80 @@
+---
+- name: Ensure desired user exists with sudo privileges
+  become: true
+  ansible.builtin.user:
+    name: "{{ server_baseline_created_username }}"
+    state: present
+    groups: sudo
+    append: true
+    create_home: true
+
+- name: Update apt and install default system packages
+  become: true
+  ansible.builtin.apt:
+    pkg: "{{ server_baseline_ubuntu_packages_default }}"
+    state: present
+    update_cache: true
+
+- name: Install additional system packages
+  become: true
+  ansible.builtin.apt:
+    pkg: "{{ server_baseline_ubuntu_packages }}"
+    state: present
+  when: server_baseline_ubuntu_packages is defined
+
+- name: UFW - Enable and deny by default
+  become: true
+  community.general.ufw:
+    state: enabled
+    default: deny
+
+- name: UFW - Allow SSH connections
+  become: true
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Setup passwordless sudo
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^%sudo'
+    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: Set authorized key for created user
+  become: true
+  ansible.posix.authorized_key:
+    user: "{{ server_baseline_created_username }}"
+    state: present
+    key: "{{ server_baseline_ssh_key }}"
+
+- name: Disable SSH password auth
+  become: true
+  ansible.builtin.lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^#PasswordAuthentication yes"
+    line: "PasswordAuthentication no"
+  notify: Restart SSH daemon
+
+- name: Disable password authentication for root
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    state: present
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin prohibit-password'
+  notify: Restart SSH daemon
+
+- name: Install and bring up Tailscale
+  ansible.builtin.include_role:
+    name: artis3n.tailscale
+  vars:
+    tailscale_authkey: "{{ server_baseline_tailscale_oauth_client_secret }}"
+    tailscale_tags:
+      - "servers"
+    tailscale_oauth_ephemeral: false
+    tailscale_oauth_preauthorized: true
+    no_log: false
+...

@@ -1,0 +1,31 @@
+---
+- name: Ensure required proxmox credentials are defined
+  ansible.builtin.assert:
+    that: 
+      - create_proxmox_vms_proxmox_username is defined
+      - create_proxmox_vms_proxmox_api_token_id is defined
+      - create_proxmox_vms_proxmox_api_token_secret
+    fail_msg: "One or more required proxmox credential variables have not been provided. See https://galaxy.ansible.com/ui/repo/published/joshrnoll/homelab/content/role/create_proxmox_vms/"
+
+- name: Ensure vm list is defined
+  ansible.builtin.assert: 
+   that: create_proxmox_vms_list is defined
+   fail_msg: "You have not provided any VMs to create. Define your VMs in the create_proxmox_vms_list variable. See https://galaxy.ansible.com/ui/repo/published/joshrnoll/homelab/content/role/create_proxmox_vms/"
+
+- name: Ensure other required variables are defined
+  ansible.builtin.assert:
+    that: 
+      - item.template is defined
+      - item.vmid is defined
+      - item.node is defined
+      - item.disk_size is defined
+    fail_msg: "One or more required VM variables have not been provided. See https://galaxy.ansible.com/ui/repo/published/joshrnoll/homelab/content/role/create_proxmox_vms/"
+  loop: "{{ create_proxmox_vms_list }}"
+  loop_control: 
+    label: "{{ item.name }}"
+
+- name: Create desired VMs
+  ansible.builtin.include_tasks: create_vms.yml
+  loop: "{{ create_proxmox_vms_list }}"
+  loop_control:
+    label: "{{ item.name }}"

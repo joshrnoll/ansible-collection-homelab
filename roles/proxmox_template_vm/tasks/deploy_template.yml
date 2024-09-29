@@ -1,0 +1,105 @@
+---
+- name: Get VMID from ansible_facts['machine_id']
+  ansible.builtin.set_fact:
+    proxmox_template_vm_{{ distro }}_vmid: "{{ ansible_facts['machine_id'] | int(base=16) | regex_search('\\d{4}$') | int + loop_index }}"
+
+- name: Set variable for network configuration with vlan
+  ansible.builtin.set_fact:
+    proxmox_template_vm_{{ distro }}_network_config: "virtio,bridge=vmbr0,tag={{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_vlan', default='novlan') }}"
+  when: lookup('ansible.builtin.vars','proxmox_template_vm_' + distro + '_vlan', default='novlan') != 'novlan'
+
+- name: Set variable for network configuration with NO vlan
+  ansible.builtin.set_fact:
+    proxmox_template_vm_{{ distro }}_network_config: "virtio,bridge=vmbr0"
+  when: lookup('ansible.builtin.vars','proxmox_template_vm_' + distro + '_vlan', default='novlan') == 'novlan'
+
+- name: Check for cloud-init image file
+  ansible.builtin.file:
+    path: /root/{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_image') }}
+  failed_when: false
+  register: cloudinit_image
+  changed_when: cloudinit_image.state == 'absent'
+
+- name: Download image file
+  ansible.builtin.get_url:
+    url: "{{ lookup('ansible.builtin.vars','proxmox_template_vm_' + distro + '_image_url') }}"
+    dest: /root/{{ lookup('ansible.builtin.vars','proxmox_template_vm_' + distro + '_image') }}
+  when: cloudinit_image.changed
+
+- name: Create VM template
+  community.general.proxmox_kvm:
+    # Credentials and host/node to work from
+    node: "{{ ansible_facts['nodename'] }}"
+    api_user: "{{ proxmox_template_vm_proxmox_username }}"
+    api_token_id: "{{ proxmox_template_vm_proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_template_vm_proxmox_api_token_secret }}"
+    api_host: "{{ ansible_facts['nodename'] }}"
+
+    # Basic VM info
+    vmid: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_vmid') }}"
+    name: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_name') }}"
+    ostype: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_ostype') }}"  # See https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_kvm_module.html
+    
+    # Hardware info
+    memory: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_memory') }}"
+    cores: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_cores') }}"
+    scsihw: virtio-scsi-pci
+    ide:
+      ide2: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_storage') }}:cloudinit,format=qcow2"
+    serial: 
+      serial0: socket
+    vga: serial0
+    agent: true
+    boot: order=scsi0;ide2
+
+    # Storage and network info
+    net:
+      net0: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_network_config') }}"
+
+    # Cloud init configuration
+    ciuser: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_ciuser') | default(omit) }}"
+    cipassword: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_cipassword') | default(omit) }}"
+    sshkeys: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_sshkeys') | default(omit) }}"
+    ipconfig:
+      ipconfig0: 'ip=dhcp'
+
+    # Desired state
+    state: present
+  register: template_creation
+
+- name: Pause 10 seconds to avoid file locks with slow storage
+  ansible.builtin.pause:
+    seconds: 10
+  when: proxmox_template_vm_slow_storage is true
+
+- name: Import disk from image file
+  ansible.builtin.command:
+    argv: 
+      - qm 
+      - importdisk 
+      - "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_vmid') }}"
+      - "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_image') }}"
+      - "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_storage') }}"
+  when: template_creation.changed
+  register: diskimport
+
+- name: Set imported disk to scsi0
+  ansible.builtin.command: 
+    argv: 
+      - qm 
+      - set 
+      - "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_vmid') }}"
+      - --scsihw 
+      - virtio-scsi-pci 
+      - --scsi0 
+      - "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_storage') }}:vm-{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_vmid') }}-disk-0"
+  when: diskimport.changed
+
+- name: Convert to template
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_template_vm_proxmox_username }}"
+    api_token_id: "{{ proxmox_template_vm_proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_template_vm_proxmox_api_token_secret }}"
+    api_host: "{{ ansible_facts['nodename'] }}"
+    vmid: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_vmid') }}"
+    state: template

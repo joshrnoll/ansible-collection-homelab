@@ -2,8 +2,8 @@
 galaxy_info:
   author: Josh Noll
   
-  description: Installs a docker container with a Tailscale sidecar for networking.
-  
+  description: Install Docker, Portainer and Nautical Backup
+
   license: MIT
 
   min_ansible_version: 2.16.9

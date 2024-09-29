@@ -1,0 +1,25 @@
+---
+- name: Ensure required variables are provided
+  ansible.builtin.assert:
+    that:
+      - docker_setup_tailscale_oauth_client_secret is defined
+      - docker_setup_nas_ip_or_hostname is defined
+      - docker_setup_share_name is defined
+      - docker_setup_mount_path is defined
+      - docker_setup_share_username is defined
+      - docker_setup_share_password is defined
+    fail_msg: "One or more required variables are missing. See https://github.com/joshrnoll/ansible-collection-homelab/tree/main/roles/docker_setup"
+
+- name: Check OS type
+  ansible.builtin.assert:
+    that: ansible_facts['distribution'] == "Ubuntu" or ansible_facts['distribution'] == "Fedora"
+    fail_msg: "Unsupported OS. See https://github.com/joshrnoll/ansible-collection-homelab/tree/main/roles/docker_setup"
+
+- name: Install Docker, Portainer and Nautical Backup on Ubuntu
+  ansible.builtin.include_tasks: ubuntu.yml
+  when: ansible_facts['distribution'] == "Ubuntu"
+
+- name: Install Docker, Portainer and Nautical Backup on Fedora
+  ansible.builtin.include_tasks: fedora.yml
+  when: ansible_facts['distribution'] == "Fedora"
+...

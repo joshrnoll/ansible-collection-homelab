@@ -1,109 +1,175 @@
-Role Name
+tailscale_container
 =========
 
-This role creates a docker container using the [docker_container](https://docs.ansible.com/ansible/latest/collections/community/general/docker_container_module.html) module along with a [Tailscale container](https://tailscale.com/blog/docker-tailscale-guide) to serve as it's networking namespace. Containers will be automatically added to your Tailnet using an Authkey or OAuth Client secret.
+This role creates a docker container using the [community.docker.docker_container](https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.html#ansible-collections-community-docker-docker-container-module) module along with a [tailscale container](https://tailscale.com/blog/docker-tailscale-guide) to serve as it's networking namespace. Containers will be automatically added to your tailnet using an [OAuth Client](https://tailscale.com/kb/1215/oauth-clients) secret.
 
-Containers can receive valid HTTPS certificates with the FQDN of your [Tailnet name](https://tailscale.com/kb/1217/tailnet-name) by using the [Tailscale serve](https://tailscale.com/kb/1312/serve) feature. This will forward a port running internal to the container to port 443. Containers can also be published to the internet using the [Tailscale funnel](https://tailscale.com/kb/1223/funnel) feature. 
+Containers can receive valid HTTPS certificates with the FQDN of your [tailnet name](https://tailscale.com/kb/1217/tailnet-name) by using the [tailscale serve](https://tailscale.com/kb/1312/serve) feature. This will forward requests to the FQDN of the container/server over port 443 to a port of your choice running inside the container. Containers can also be optionally published to the internet using the [tailscale funnel](https://tailscale.com/kb/1223/funnel) feature. For more info on how this works, see the tailscale [README](/tailscale-info/README.md).
 
 Requirements
 ------------
 
-You will need a [Tailscale Account](https://tailscale.com/) and a Tailscale [Auth key](https://tailscale.com/kb/1085/auth-keys) or [OAuth Client](https://tailscale.com/kb/1215/oauth-clients) secret for this role to run properly. It is recommended that you store your secret in Ansible vault, in a dictionary format like this:
-
-```YAML
-tailscale_containers_oauth_key:
-  key: <random-secret-string-here>
-```
-
-You can reference this variable with:
-```YAML
-"{{ tailscale_containers_oauth_key[key] }}"
-```
-
-Ensure you use ```--ask-vault-pass``` or the ```-J``` flag when calling your playbook. 
-
-The reason for the dictionary format is that I've found it plays nice with other Tailscale related roles that require this format. A simple key:value variable format should work for this role, but I recommend the dictionary format for consistency. 
+#### Tailscale Account and Oauth Client
+- You will need a [tailscale account](https://tailscale.com/) and an [OAuth Client](https://tailscale.com/kb/1215/oauth-clients) secret for this role to run properly. For more info, see this tailscale [README](../../tailscale-info/README.md).
 
 Role Variables
 --------------
+
+#### Required Variables (No Defaults)
+Not providing these variables will cause the task to fail.
 ```YAML
-# Required variables with defaults
-no_serve: false # Mutually exclusive with serve_port if true.
-https_container: false
-public: false
-serve_config: serve-config.json
-extra_args: ""
-userspace_networking: "true"
+# Failing to provide these variables will cause the task to fail.
+tailscale_container_oauth_client_secret: # Your Tailscale Oauth Client secret. See tailscale README for more info. 
+tailscale_container_service_name: # The container's hostname as it will be added to your tailnet. This will also be used to create a sub-directory on the host for bind mounts. This sub-directory will be in the {{ ansible_user }}'s home directory.
+tailscale_container_image: # Container's image (without tag appended)
+tailscale_container_tag: # Container's tag
+```
 
-# Required variables without defaults
-authkey: # Your Tailscale Auth key or Oath Client secret. It is recommended to use Ansible vault for this. 
-service_name: # The container's hostname as it will be added to your tailnet. This will also be used to create a sub-directory on the host for bind mounts. This sub-directory will be in the {{ ansible_user }}'s home directory.
-container_image: # Container's image (without tag appended)
-container_tag: # Container's tag
+#### Examples - Required Variables (No Defaults)
+```YAML
+tailscale_container_oauth_client_secret: "{{ tailscale_oauth_client_secret['secret'] }}" # Stored in Ansible vault
+tailscale_container_service_name: uptime-kuma
+tailscale_container_image: louislam/uptime-kuma
+tailscale_container_tag: latest
+```
 
-# Optional variables 
-serve_port: # The port to forward with tailscale serve
-container_user: # User to run the container as -- advanced use only (generally not used)
-container_volumes: # Volumes in list format
-env_vars: # Environment variables in dictionary format
-container_labels: # Container labels in dictionary format
-container_commands: # Commands to run on container startup
+#### Optional variables
+Not providing these variables will not cause the task to fail. Use them according to your container's use case. 
+```YAML
+tailscale_container_serve_port: # The port to forward with tailscale serve. Do not use if you have a custom serve config file. 
+tailscale_container_user: # User to run the container as -- advanced use only (generally not used)
+tailscale_container_volumes: # Volumes in list format
+tailscale_container_env_vars: # Environment variables in dictionary format
+tailscale_container_labels: # Container labels in dictionary format
+tailscale_container_commands: # Commands to run on container startup
+```
+#### Examples - Optional variables 
+```YAML
+tailscale_container_serve_port: 3001
+tailscale_container_user: container_admin
+tailscale_container_volumes: # It's recommended that all bind mounts exist in the /home/{{ ansible_user }}/{{ tailscale_container_service_name }} directory
+  - /home/{{ ansible_user }}/{{ tailscale_container_service_name }}/app:/app/data
+  - /home/{{ ansible_user }}/{{ tailscale_container_service_name }}/config:/config
+tailscale_container_env_vars:
+  PUID: "1000"
+  PGID: "999"
+  TZ: "America/New_York"
+tailscale_container_labels:
+  nautical.backups.enable: "true"
+tailscale_container_commands: "echo 'startup commands for your container go here'"
+```
+
+#### Variables with Defaults
+Not providing these variables will cause the play to run with the below defaults.
+```YAML
+# The following are the defaults and explanations of each variable.
+tailscale_container_no_serve: false # Set to true if you do not want to use tailscale serve. Mutually exclusive with serve_port if true.
+tailscale_container_https_container: false # Set to true if you the container you are serving uses HTTPS with a self-signed certificate. Mutually exclusive with no_serve.
+tailscale_container_public: false # Set to true if you wish to publicly expose your container to the internet with the tailscale funnel feature.
+tailscale_container_serve_config: serve-config.json # If you have a custom tailscale serve config file, you can pass it here. Otherwise, leave default.
+tailscale_container_extra_args: "" # Use to pass additional arguments to the 'tailscale up' command.
+tailscale_container_userspace_networking: "true" # Usually, you should leave this as default. See https://tailscale.com/kb/1112/userspace-networking
+tailscale_container_pull_image: false # Set to true to re-pull the container's image every time. Useful for updating the container. 
 ```
 
 Dependencies
 ------------
-**Docker** is required to be installed on the target node
+#### community.docker collection
+- This role depends on the [community.docker](https://galaxy.ansible.com/ui/repo/published/community/docker/) ansible collection which is installed as a dependency when installing the joshrnoll.homelab collection. 
+
+#### Docker installed on target node
+- [Docker](https://docs.docker.com/engine/install/) is required to be installed on the target node. You can use [joshrnoll.homelab.docker_setup](https://galaxy.ansible.com/ui/repo/published/joshrnoll/homelab/content/) for this. 
 
 
-Example Playbook
+Example Playbooks
 ----------------
 
-This example installs Uptime Kuma as a non-public (not exposed to the internet) container. It is using the default of userspace networking and has no environment variables provided. The container will be reachable at ***https://service_name.tailnet-name.ts.net*** 
+This example installs Uptime Kuma as a non-public (not exposed to the internet) container. It is using the default of userspace networking and has no environment variables provided. The container will be reachable at ***https://uptime-kuma.tailnet-name.ts.net*** 
 ```YAML
 ---
 - name: Install Uptime Kuma
   hosts: uptime-kuma
 
   tasks:  
+    - name: Import variables from Ansible vault
+      ansible.builtin.include_vars: secrets.yml
+    
     - name: Install Uptime Kuma 
-      include_role:
-        name: joshrnoll.homelab.tailscale-container
+      ansible.builtin.include_role:
+        name: joshrnoll.homelab.tailscale_container
       vars:
-        authkey: "{{ tailscale_containers_oauth_key['key'] }}"
-        service_name: uptime-kuma
-        container_image: louislam/uptime-kuma
-        container_tag: latest
-        serve_port: 3001
-        public: false
-        container_volumes:
-          - /home/{{ ansible_user }}/{{ container_name }}/app:/app/data
+        tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_key['key'] }}"
+        tailscale_container_service_name: uptime-kuma
+        tailscale_container_image: louislam/uptime-kuma
+        tailscale_container_tag: latest
+        tailscale_container_serve_port: 3001
+        tailscale_container_public: false
+        tailscale_container_volumes:
+          - /home/{{ ansible_user }}/{{ tailscale_container_service_name }}/app:/app/data
+...
 ```
-This example installs plex as a public (exposed to the internet) container. It has several environment variables provided and is not using userspace networking. 
+
+This example installs plex as a public (exposed to the internet) container. Notice that the ```tailscale_container_https_container``` is set to true because Plex uses https with a self-signed certificate by default. This playbook also provides an example of passing environment variables and labels to the container.
+
 ```YAML
+---
 - name: Install plex
   hosts: plex
 
   tasks:
+    - name: Import variables from Ansible vault
+      ansible.builtin.include_vars: secrets.yml
+
     - name: Install plex
-      include_role:
-        name: joshrnoll.homelab.tailscale-container
+      ansible.builtin.include_role:
+        name: joshrnoll.homelab.tailscale_container
       vars:
-        authkey: "{{ tailscale_containers_oauth_key['key'] }}"
-        service_name: plex
-        container_image: lscr.io/linuxserver/plex
-        container_tag: arm64v8-latest
-        https_container: true
-        serve_port: 32400
-        userspace_networking: "false"
-        public: true
-        container_volumes:
-          - /home/{{ ansible_user }}/plex/config:/config
-          - /home/{{ ansible_user }}/media/media:/media
-        env_vars:
+        tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_key['key'] }}"
+        tailscale_container_service_name: plex
+        tailscale_container_image: lscr.io/linuxserver/plex
+        tailscale_container_tag: arm64v8-latest
+        tailscale_container_https_container: true
+        tailscale_container_serve_port: 32400
+        tailscale_container_public: true
+        tailscale_container_container_volumes:
+          - /home/{{ ansible_user }}/{{ tailscale_container_service_name }}/config:/config
+          - /home/{{ ansible_user }}/media:/media
+        tailscale_container_env_vars:
           PUID: "1000"
           PGID: "999"
           TZ: "America/New_York"
           Version: "docker"
+        tailscale_container_labels:
+          nautical.backups.enable: "true"
+...
+```
+
+#### IMPORTANT!
+
+It's recommended to store your secrets in Ansible Vault. To create a vault file called ```secrets.yml``` use the following command:
+
+```bash
+ansible-vault create secrets.yml
+```
+
+Put any sensitive variables in this file. An example of an Ansible Vault file:
+```YAML
+# Your Tailscale Oauth client secret in dict format
+tailscale_containers_oauth_key:
+  key: <your-oauth-client-secret>
+```
+
+#### Calling the Playbook
+
+Ensure you use ```--ask-vault-pass``` when calling your playbook. Example:
+
+```bash
+ansible-playbook playbook.yml -i hosts.yml --ask-vault-pass
+```
+
+You can also use the aliases ```-J```. Example:
+
+```bash
+ansible-playbook playbook.yml -i hosts.yml  -J
 ```
 
 License

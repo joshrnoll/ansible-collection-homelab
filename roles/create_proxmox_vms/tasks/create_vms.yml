@@ -1,0 +1,87 @@
+- name: Set variable for network configuration with vlan
+  ansible.builtin.set_fact:
+    create_proxmox_vms_network_config: "virtio,bridge=vmbr0,tag={{ item.vlan }}"
+  when: item.vlan is defined
+
+- name: Set variable for network configuration with NO vlan
+  ansible.builtin.set_fact:
+    create_proxmox_vms_network_config: "virtio,bridge=vmbr0"
+  when: item.vlan is not defined
+
+- name: Set variable for IP config
+  ansible.builtin.set_fact:
+    create_proxmox_vms_ipconfig: "ip={{ item.ip_address }},gw={{ item.gateway }}"
+  when: item.ip_address is defined and item.gateway is defined
+
+- name: Clone VM from template
+  community.general.proxmox_kvm:
+    # Credentials and api host to work from
+    api_user: "{{ create_proxmox_vms_proxmox_username }}"
+    api_token_id: "{{ create_proxmox_vms_proxmox_api_token_id }}"
+    api_token_secret: "{{ create_proxmox_vms_proxmox_api_token_secret }}"
+    api_host: "{{ ansible_facts['nodename'] }}"
+
+    # Basic VM info
+    node: "{{ item.node }}" # Node the VM will be created on
+    vmid: "{{ item.template }}"
+    clone: template
+    full: true
+    newid: "{{ item.vmid }}"
+    name: "{{ item.name }}"
+    storage: "{{ item.storage }}"
+    timeout: 600
+
+    state: present
+      
+- name: Resize boot drive
+  community.general.proxmox_disk:
+    api_user: "{{ create_proxmox_vms_proxmox_username }}"
+    api_token_id: "{{ create_proxmox_vms_proxmox_api_token_id }}"
+    api_token_secret: "{{ create_proxmox_vms_proxmox_api_token_secret }}"
+    api_host: "{{ ansible_facts['nodename'] }}"
+    vmid: "{{ item.vmid }}"
+    disk: scsi0
+    size: "{{ item.disk_size }}"
+    storage: "{{ item.storage }}"
+    state: resized
+
+- name: Update VM hardware 
+  community.general.proxmox_kvm:
+    api_user: "{{ create_proxmox_vms_proxmox_username }}"
+    api_token_id: "{{ create_proxmox_vms_proxmox_api_token_id }}"
+    api_token_secret: "{{ create_proxmox_vms_proxmox_api_token_secret }}"
+    api_host: "{{ ansible_facts['nodename'] }}"
+
+    # VMID and name of VM to update
+    vmid: "{{ item.vmid }}"
+    name: "{{ item.name }}"
+
+    # Hardware info
+    memory: "{{ item.memory | default(omit) }}"
+    cores: "{{ item.cores | default(omit) }}"
+    node: "{{ item.node }}"
+    
+    # Network info
+    net:
+      net0: "{{ create_proxmox_vms_network_config }}"
+    ipconfig:
+      ipconfig0: "{{ create_proxmox_vms_ipconfig | default(omit) }}"
+    nameservers: "{{ item.nameservers | default(omit) }}"
+    
+    # Cloud-init info
+    ciuser: "{{ item.ciuser | default(omit) }}"
+    cipassword: "{{ item.cipassword | default(omit) }}"
+    sshkeys: "{{ item.sshkeys | default(omit) }}"
+    
+    # Desired state
+    state: present
+    update: true
+
+- name: Start the VM 
+  community.general.proxmox_kvm:
+    vmid: "{{ item.vmid }}" 
+    api_user: "{{ create_proxmox_vms_proxmox_username }}"
+    api_token_id: "{{ create_proxmox_vms_proxmox_api_token_id }}"
+    api_token_secret: "{{ create_proxmox_vms_proxmox_api_token_secret }}"
+    api_host: "{{ ansible_facts['nodename'] }}"
+    state: started

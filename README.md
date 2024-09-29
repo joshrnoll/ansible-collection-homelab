@@ -2,6 +2,8 @@
 
 A collection of automation roles for my homelab.
 
+[Install with Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/joshrnoll/homelab/)
+
 ### [server_baseline](/roles/server_baseline/README.md)
 
 Automates a baseline configuration for all linux servers (bare metal or VM).

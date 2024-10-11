@@ -5,11 +5,13 @@
       - server_baseline_created_username is defined
       - server_baseline_tailscale_oauth_client_secret is defined
     fail_msg: "One or more required variables are missing. See https://github.com/joshrnoll/ansible-collection-homelab/tree/main/roles/server_baseline"
+    quiet: true
 
 - name: Check OS type
   ansible.builtin.assert:
     that: ansible_facts['distribution'] in supported_distributions
     fail_msg: "Unsupported OS. See https://github.com/joshrnoll/ansible-collection-homelab/tree/main/roles/docker_setup"
+    quiet: true
 
 - name: Check for Proxmox hosts
   ansible.builtin.set_fact:

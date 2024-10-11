@@ -9,11 +9,13 @@
       - proxmox_template_vm_proxmox_api_token_id is defined
       - proxmox_template_vm_proxmox_api_token_secret
     fail_msg: "One or more required proxmox credential variables have not been provided. See https://galaxy.ansible.com/ui/repo/published/joshrnoll/homelab/content/role/proxmox_template_vm/"
+    quiet: true
 
 - name: Ensure desired distros have been selected
   ansible.builtin.assert:
     that: proxmox_template_vm_distros is defined
     fail_msg: "One or more template distros have not been provided. Store this in the proxmox_template_vm_distros variable. See https://galaxy.ansible.com/ui/repo/published/joshrnoll/homelab/content/role/proxmox_template_vm/"
+    quiet: true
 
 - name: Create VM templates
   ansible.builtin.include_tasks: setup.yml

@@ -9,11 +9,13 @@
       - docker_setup_share_username is defined
       - docker_setup_share_password is defined
     fail_msg: "One or more required variables are missing. See https://github.com/joshrnoll/ansible-collection-homelab/tree/main/roles/docker_setup"
+    quiet: true
 
 - name: Check OS type
   ansible.builtin.assert:
     that: ansible_facts['distribution'] == "Ubuntu" or ansible_facts['distribution'] == "Fedora"
     fail_msg: "Unsupported OS. See https://github.com/joshrnoll/ansible-collection-homelab/tree/main/roles/docker_setup"
+    quiet: true
 
 - name: Install Docker, Portainer and Nautical Backup on Ubuntu
   ansible.builtin.include_tasks: ubuntu.yml

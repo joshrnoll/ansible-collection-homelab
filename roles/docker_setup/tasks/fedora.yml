@@ -84,5 +84,4 @@
       REQUIRE_LABEL: "true"
       CRON_SCHEDULE: "0 1 * * *"
       TZ: America/New_York
-      BACKUP_ON_START: "true"  # <-- Remove when done testing
 ...

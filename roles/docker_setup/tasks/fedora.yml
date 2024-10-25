@@ -64,7 +64,7 @@
     tailscale_container_https_container: true
     tailscale_container_serve_port: 9443
     tailscale_container_userspace_networking: "false"
-    tailscale_container_container_volumes:
+    tailscale_container_volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /home/{{ ansible_user }}/portainer-{{ ansible_facts['nodename'] }}/portainer_data:/data
 

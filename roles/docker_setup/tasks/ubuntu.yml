@@ -112,7 +112,7 @@
     tailscale_container_userspace_networking: "false"
     tailscale_container_container_volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
+      - /home/{{ ansible_user }}/portainer-{{ ansible_facts['nodename'] }}/portainer_data:/data
 
 - name: Install Nautical-Backup for container volume backups to TrueNAS
   community.general.docker_container:

@@ -24,7 +24,7 @@ tailscale_container_image: # Container's image (without tag appended)
 tailscale_container_tag: # Container's tag
 ```
 
-#### Examples - Required Variables (No Defaults)
+#### Examples: Required Variables (No Defaults)
 ```YAML
 tailscale_container_oauth_client_secret: "{{ tailscale_oauth_client_secret['secret'] }}" # Stored in Ansible vault
 tailscale_container_service_name: uptime-kuma
@@ -35,6 +35,7 @@ tailscale_container_tag: latest
 #### Optional variables
 Not providing these variables will not cause the task to fail. Use them according to your container's use case. 
 ```YAML
+tailscale_container_tailnet_name: # Required to use tailscale_container_ip_address in play
 tailscale_container_serve_port: # The port to forward with tailscale serve. Do not use if you have a custom serve config file. 
 tailscale_container_user: # User to run the container as -- advanced use only (generally not used)
 tailscale_container_volumes: # Volumes in list format
@@ -42,8 +43,9 @@ tailscale_container_env_vars: # Environment variables in dictionary format
 tailscale_container_labels: # Container labels in dictionary format
 tailscale_container_commands: # Commands to run on container startup
 ```
-#### Examples - Optional variables 
+#### Examples: Optional variables 
 ```YAML
+tailscale_container_tailnet_name: cat-crocodile.ts.net
 tailscale_container_serve_port: 3001
 tailscale_container_user: container_admin
 tailscale_container_volumes: # It's recommended that all bind mounts exist in the /home/{{ ansible_user }}/{{ tailscale_container_service_name }} directory
@@ -71,6 +73,13 @@ tailscale_container_userspace_networking: "true" # Usually, you should leave thi
 tailscale_container_pull_image: false # Set to true to re-pull the container's image every time. Useful for updating the container. 
 ```
 
+#### Special Variable: tailscale_container_ip_address
+The variable ```tailscale_container_ip_address``` is generated during the role's execution using the following command:
+
+```dig @100.100.100.100 +short {{ tailscale_container_service_name }}.{{ tailscale_container_tailnet_name }}```
+
+This stores the tailscale IP address of the container that was just deployed so that you can use it within your play. This is useful for passing to docker labels like the ones required by [traefik](https://traefik.io).
+
 Dependencies
 ------------
 #### community.docker collection
@@ -82,6 +91,8 @@ Dependencies
 
 Example Playbooks
 ----------------
+
+#### Basic Example
 
 This example installs Uptime Kuma as a non-public (not exposed to the internet) container. It is using the default of userspace networking and has no environment variables provided. The container will be reachable at ***https://uptime-kuma.tailnet-name.ts.net*** 
 ```YAML
@@ -97,7 +108,7 @@ This example installs Uptime Kuma as a non-public (not exposed to the internet) 
       ansible.builtin.include_role:
         name: joshrnoll.homelab.tailscale_container
       vars:
-        tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_key['key'] }}"
+        tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_client['secret'] }}"
         tailscale_container_service_name: uptime-kuma
         tailscale_container_image: louislam/uptime-kuma
         tailscale_container_tag: latest
@@ -107,6 +118,8 @@ This example installs Uptime Kuma as a non-public (not exposed to the internet) 
           - /home/{{ ansible_user }}/{{ tailscale_container_service_name }}/app:/app/data
 ...
 ```
+
+#### Example with Tailscale Funnel (Exposed to internet)
 
 This example installs plex as a public (exposed to the internet) container. Notice that the ```tailscale_container_https_container``` is set to true because Plex uses https with a self-signed certificate by default. This playbook also provides an example of passing environment variables and labels to the container.
 
@@ -123,7 +136,7 @@ This example installs plex as a public (exposed to the internet) container. Noti
       ansible.builtin.include_role:
         name: joshrnoll.homelab.tailscale_container
       vars:
-        tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_key['key'] }}"
+        tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_client['secret'] }}"
         tailscale_container_service_name: plex
         tailscale_container_image: lscr.io/linuxserver/plex
         tailscale_container_tag: arm64v8-latest
@@ -140,6 +153,41 @@ This example installs plex as a public (exposed to the internet) container. Noti
           Version: "docker"
         tailscale_container_labels:
           nautical.backups.enable: "true"
+...
+```
+
+#### Example using labels and tailscale_container_ip_address
+
+This example shows the use of the special variable ```tailscale_container_ip_address``` with docker labels for traefik and [traefik-kop](https://github.com/jittering/traefik-kop).
+
+```YAML
+---
+- name: Install nginx
+  hosts: nginx
+
+  tasks:
+    - name: Import variables from Ansible vault
+      ansible.builtin.include_vars: secrets.yml
+
+    - name: Install nginx
+      ansible.builtin.include_role:
+        name: joshrnoll.homelab.tailscale_container
+      vars:
+        tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_client['secret'] }}"
+        tailscale_container_service_name: nginx
+        tailscale_container_image: nginx
+        tailscale_container_tag: latest
+        tailscale_container_no_serve: true
+        tailscale_container_userspace_networking: "false"
+        tailscale_container_labels:
+          traefik.enable: "true"
+          traefik.http.routers.nginx.rule: "Host(`nginx.nollhome.casa`)"
+          traefik.http.routers.nginx.entrypoints: "https"
+          traefik.http.routers.nginx.tls: "true"
+          traefik.http.routers.nginx.tls.certresolver: "cloudflare"
+          traefik.http.services.nginx.loadbalancer.server.scheme: "http"
+          traefik.http.services.nginx.loadbalancer.server.port: "80"
+          kop.bind.ip: "{{ tailscale_container_ip_address }}" # Special variable created from within role
 ...
 ```
 

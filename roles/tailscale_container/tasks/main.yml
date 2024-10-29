@@ -128,6 +128,14 @@
     seconds: 15
   when: sidecar_serve.changed or sidecar_noserve.changed
 
+- name: Look up tailscale IP address
+  ansible.builtin.command: dig @100.100.100.100 +short {{ tailscale_container_service_name }}.{{ tailscale_container_tailnet_name }}
+  register: output
+
+- name: Store tailscale IP address in variable
+  ansible.builtin.set_fact:
+    tailscale_container_ip_address: "{{ output.stdout }}"
+
 - name: Pull image and deploy container - {{ tailscale_container_service_name }}
   community.docker.docker_container:
     name: "{{ tailscale_container_service_name }}"

@@ -80,6 +80,8 @@ The variable ```tailscale_container_ip_address``` is generated during the role's
 
 This stores the tailscale IP address of the container that was just deployed so that you can use it within your play. This is useful for passing to docker labels like the ones required by [traefik](https://traefik.io).
 
+**Note that to for this variable to work, you must also provide your tailnet name via the ```tailscale_container_tailnet_name``` variable.**
+
 Dependencies
 ------------
 #### community.docker collection
@@ -136,6 +138,7 @@ This example installs plex as a public (exposed to the internet) container. Noti
       ansible.builtin.include_role:
         name: joshrnoll.homelab.tailscale_container
       vars:
+        tailscale_container_tailnet_name: cat-crocodile.ts.net # Required to retrieve IP address for tailscale_container_ip_address
         tailscale_container_oauth_client_secret: "{{ tailscale_containers_oauth_client['secret'] }}"
         tailscale_container_service_name: plex
         tailscale_container_image: lscr.io/linuxserver/plex

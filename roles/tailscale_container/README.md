@@ -18,6 +18,7 @@ Role Variables
 Not providing these variables will cause the task to fail.
 ```YAML
 # Failing to provide these variables will cause the task to fail.
+tailscale_container_tailnet_name: # Required to use tailscale_container_ip_address in play
 tailscale_container_oauth_client_secret: # Your Tailscale Oauth Client secret. See tailscale README for more info. 
 tailscale_container_service_name: # The container's hostname as it will be added to your tailnet. This will also be used to create a sub-directory on the host for bind mounts. This sub-directory will be in the {{ ansible_user }}'s home directory.
 tailscale_container_image: # Container's image (without tag appended)
@@ -26,6 +27,7 @@ tailscale_container_tag: # Container's tag
 
 #### Examples: Required Variables (No Defaults)
 ```YAML
+tailscale_container_tailnet_name: tailfe8c.ts.net # If you have generated a 'fun' tailnet name, you may have something like cat-crodocile.ts.net
 tailscale_container_oauth_client_secret: "{{ tailscale_oauth_client_secret['secret'] }}" # Stored in Ansible vault
 tailscale_container_service_name: uptime-kuma
 tailscale_container_image: louislam/uptime-kuma
@@ -35,7 +37,6 @@ tailscale_container_tag: latest
 #### Optional variables
 Not providing these variables will not cause the task to fail. Use them according to your container's use case. 
 ```YAML
-tailscale_container_tailnet_name: # Required to use tailscale_container_ip_address in play
 tailscale_container_serve_port: # The port to forward with tailscale serve. Do not use if you have a custom serve config file. 
 tailscale_container_user: # User to run the container as -- advanced use only (generally not used)
 tailscale_container_volumes: # Volumes in list format
@@ -45,7 +46,6 @@ tailscale_container_commands: # Commands to run on container startup
 ```
 #### Examples: Optional variables 
 ```YAML
-tailscale_container_tailnet_name: cat-crocodile.ts.net
 tailscale_container_serve_port: 3001
 tailscale_container_user: container_admin
 tailscale_container_volumes: # It's recommended that all bind mounts exist in the /home/{{ ansible_user }}/{{ tailscale_container_service_name }} directory

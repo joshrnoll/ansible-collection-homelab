@@ -22,6 +22,7 @@ Role Variables
 #### Required Variables
 ```YAML
 # Task will fail if these are not provided
+docker_setup_tailnet_name: # Your tailnet name. Ex. tailfe8c.ts.net (or cat-crocodile.ts.net, if you have a 'fun' name)
 docker_setup_tailscale_oauth_client_secret: # Tailscale oauth client secret for deploying portainer. See tailscale README for more info. 
 docker_setup_nas_ip_or_hostname: # IP or Hostname of the NAS where you host your SMB share. Not the full path to the share
 docker_setup_share_name: # The name of your SMB share.
@@ -31,6 +32,7 @@ docker_setup_share_password: # Password of the user with access to the share to 
 ```
 #### Examples
 ```YAML
+docker_setup_tailnet_name: tailfe8c.ts.net
 docker_setup_tailscale_oauth_client_secret: "{{ tailscale_containers_oauth_client['secret'] }}" # Stored in Ansible vault
 docker_setup_nas_ip_or_hostname: 192.168.0.100
 docker_setup_share_name: DockerBackups

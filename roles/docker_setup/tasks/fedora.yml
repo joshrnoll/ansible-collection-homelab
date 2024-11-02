@@ -57,6 +57,7 @@
   ansible.builtin.include_role:
     name: tailscale_container
   vars:
+    tailscale_container_tailnet_name: "{{ docker_setup_tailnet_name }}"
     tailscale_container_oauth_client_secret: "{{ docker_setup_tailscale_oauth_client_secret }}"
     tailscale_container_service_name: portainer-{{ ansible_facts['nodename'] }}
     tailscale_container_image: portainer/portainer-ce

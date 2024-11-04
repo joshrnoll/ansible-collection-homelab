@@ -22,9 +22,8 @@
         src: "{{ tailscale_container_serve_config }}"
         dest: /home/{{ ansible_user }}/{{ tailscale_container_service_name }}/ts-serve-config/{{ tailscale_container_serve_config }}
         mode: '0664'
-        force: true  # <-- Set true to force file to be replaced each time
 
-    - name: Add to serve config file - port {{ tailscale_container_serve_port }}
+    - name: Add port to serve config file
       ansible.builtin.lineinfile:
         backrefs: true
         regexp: '^(\s*"Proxy": "http://127\.0\.0\.1:)(\s*)(")'
@@ -74,7 +73,7 @@
 #     state: present
 #   when: tailscale_container_public is true
 
-- name: Pull image and deploy tailscale container [WITH SERVE CONFIG] - {{ tailscale_container_service_name }}
+- name: Pull image and deploy tailscale container [WITH SERVE CONFIG]
   community.docker.docker_container:
     name: ts-{{ tailscale_container_service_name }}
     image: tailscale/tailscale:stable
@@ -99,7 +98,7 @@
   when: tailscale_container_no_serve is false
   register: sidecar_serve
 
-- name: Pull image and deploy tailscale container [NO SERVE CONFIG] - {{ tailscale_container_service_name }}
+- name: Pull image and deploy tailscale container [NO SERVE CONFIG]
   community.docker.docker_container:
     name: ts-{{ tailscale_container_service_name }}
     image: tailscale/tailscale:stable
@@ -131,12 +130,13 @@
 - name: Look up tailscale IP address
   ansible.builtin.command: dig @100.100.100.100 +short {{ tailscale_container_service_name }}.{{ tailscale_container_tailnet_name }}
   register: output
+  changed_when: false
 
 - name: Store tailscale IP address in variable
   ansible.builtin.set_fact:
     tailscale_container_ip_address: "{{ output.stdout }}"
 
-- name: Pull image and deploy container - {{ tailscale_container_service_name }}
+- name: Pull image and deploy container
   community.docker.docker_container:
     name: "{{ tailscale_container_service_name }}"
     image: "{{ tailscale_container_image }}:{{ tailscale_container_tag }}"

@@ -85,11 +85,14 @@
     name: docker
 
 - name: Create mount path for NAS share
+  become: true
   ansible.builtin.file:
     path: "{{ docker_setup_mount_path }}"
     state: directory
     mode: '0755'
-
+    owner: "{{ ansible_user }}"
+    group: docker
+    
 - name: Mount backup share from NAS
   become: true
   ansible.posix.mount:

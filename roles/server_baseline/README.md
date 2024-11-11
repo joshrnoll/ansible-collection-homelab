@@ -27,7 +27,8 @@ Role Variables
 Not providing these variables will cause the task to fail.
 ```YAML
 server_baseline_server_baseline_created_username: <your-username> # Enter the user you wish to create with sudo privileges.
-server_baseline_tailscale_oauth_client_secret: <your-tailscale-oauth-client-secret> # Your Tailscale Oauth client. It is recommended to store this in dictionary format like the example provided. 
+server_baseline_tailscale_oauth_client_secret: <your-tailscale-oauth-client-secret> # Your Tailscale Oauth client. It is recommended to store this in dictionary format like the example provided.
+server_baseline_timezone: <server-timezone> # Timezone to set on the server 
 ```
 
 #### Examples - Required Variables
@@ -36,6 +37,7 @@ server_baseline_tailscale_oauth_client_secret: <your-tailscale-oauth-client-secr
 # Task will fail if these are not provided
 server_baseline_server_baseline_created_username: josh
 server_baseline_tailscale_oauth_client_secret: "{{ tailscale_servers_oauth_client['secret] }}" # From Ansible vault - must be stored as dict value!
+server_baseline_timezone: America/New_York
 ```
 
 #### Optional Variables

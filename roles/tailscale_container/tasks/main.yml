@@ -150,4 +150,6 @@
     labels: "{{ tailscale_container_labels | default(omit) }}"
     command: "{{ tailscale_container_commands | default(omit) }}"
     network_mode: container:ts-{{ tailscale_container_service_name }}
+    comparisons:
+      '*': strict
 ...

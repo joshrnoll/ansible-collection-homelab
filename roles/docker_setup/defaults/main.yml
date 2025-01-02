@@ -1,0 +1,5 @@
+---
+docker_setup_userspace_networking: true
+docker_setup_install_portainer: false
+docker_setup_install_nautical: false 
+...

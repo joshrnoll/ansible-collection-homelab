@@ -45,7 +45,7 @@
     cores: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_cores') }}"
     scsihw: virtio-scsi-pci
     ide:
-      ide2: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_storage') }}:cloudinit,format=qcow2"
+      ide2: "{{ lookup('ansible.builtin.vars', 'proxmox_template_vm_' + distro + '_storage') }}:cloudinit"
     serial: 
       serial0: socket
     vga: serial0

@@ -17,11 +17,14 @@
     fail_msg: "Unsupported OS. See https://github.com/joshrnoll/ansible-collection-homelab/tree/main/roles/docker_setup"
     quiet: true
 
-- name: Install Docker, Portainer and Nautical Backup on Ubuntu
+- name: Install Docker on Ubuntu
   ansible.builtin.include_tasks: ubuntu.yml
   when: ansible_facts['distribution'] == "Ubuntu"
 
-- name: Install Docker, Portainer and Nautical Backup on Fedora
+- name: Install Docker on Fedora
   ansible.builtin.include_tasks: fedora.yml
   when: ansible_facts['distribution'] == "Fedora"
+
+- name: Run common tasks
+  ansible.builtin.include_tasks: common.yml
 ...

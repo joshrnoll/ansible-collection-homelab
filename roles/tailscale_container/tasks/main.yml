@@ -82,7 +82,7 @@
     restart_policy: unless-stopped
     state: started
     env:
-      TS_AUTHKEY: "{{ tailscale_container_oauth_client_secret }}?ephemeral=false"
+      TS_AUTHKEY: "{{ tailscale_container_oauth_client_secret }}"
       TS_STATE_DIR: /var/lib/tailscale
       TS_EXTRA_ARGS: --advertise-tags=tag:containers {{ tailscale_container_extra_args }}
       TS_SERVE_CONFIG: /config/{{ tailscale_container_serve_config }}
@@ -107,7 +107,7 @@
     restart_policy: unless-stopped
     state: started
     env:
-      TS_AUTHKEY: "{{ tailscale_container_oauth_client_secret }}?ephemeral=false"
+      TS_AUTHKEY: "{{ tailscale_container_oauth_client_secret }}"
       TS_STATE_DIR: /var/lib/tailscale
       TS_EXTRA_ARGS: --advertise-tags=tag:containers {{ tailscale_container_extra_args }}
       TS_USERSPACE: "{{ tailscale_container_userspace_networking }}"
